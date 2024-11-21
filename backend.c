@@ -6,6 +6,19 @@
 static GstElement *pipeline = NULL;
 static pthread_mutex_t pipeline_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/**
+ * @brief callback function to handle new video samples.
+ * 
+ * triggered when a new sample is available in the GStreamer pipeline.
+ * it takes and extracts the sample data, stores it in the `current_frame` object, and notifies
+ * other threads that the frame is ready for usage.
+ * 
+ * @param sink the GstElement that produced the sample.
+ * @param user_data user data passed to the callback.
+ * 
+ * @return GST_FLOW_OK if success, or GST_FLOW_ERROR if error.
+ */
+
 Frame current_frame = {NULL, 0, 0};
 pthread_mutex_t frame_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t frame_cond = PTHREAD_COND_INITIALIZER;
@@ -68,6 +81,13 @@ static GstFlowReturn on_new_sample(GstElement *sink, gpointer user_data) {
     return GST_FLOW_OK;
 }
 
+/**
+ * @brief initializes the GStreamer pipeline.
+ * 
+ * creates and configures the GStreamer elements required for video
+ * capturing, it sets up the pipeline and starts the video stream.
+ */
+
 void init_pipeline() {
     gst_init(NULL, NULL);
     pthread_mutex_lock(&pipeline_mutex);
@@ -125,9 +145,22 @@ void init_pipeline() {
     pthread_mutex_unlock(&pipeline_mutex);
 }
 
+/**
+ * @brief reconfiguring the GStreamer pipeline.
+ * 
+ * stops and restarts the pipeline is used when the settings
+ * such as frame rate, quality, or resolution are updated.
+ */
+
 void reconfigure_pipeline() {
     init_pipeline();
 }
+
+/**
+ * @brief cleans up and stops the GStreamer pipeline.
+ * 
+ * stops the pipeline and cleans up (releases) any resources that were held by it.
+ */
 
 void cleanup_pipeline() {
     pthread_mutex_lock(&pipeline_mutex);

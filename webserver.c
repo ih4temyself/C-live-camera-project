@@ -10,11 +10,22 @@
 #define STREAM_PATH "/stream"
 
 typedef struct {
-    uint64_t frame_version; 
-    size_t sent;           
+    uint64_t frame_version; /** version of the frame sent to the client (at the moment)*/
+    size_t sent; /** amount of data sent to the client so far. */    
 } connection_info;
 
 static struct MHD_Daemon *mhd_daemon = NULL;
+
+/**
+ * @brief callback function to stream the MJPEG data to the client.
+ *
+ * @param cls connection information.
+ * @param pos current position in the stream.
+ * @param buf buffer to store the data.
+ * @param max maximum number of bytes to send.
+ *
+ * @return number of bytes sent, or -1 if error.
+ */
 
 static ssize_t stream_callback(void *cls, uint64_t pos, char *buf, size_t max) {
     connection_info *conn_info = (connection_info *)cls;
@@ -40,6 +51,15 @@ static ssize_t stream_callback(void *cls, uint64_t pos, char *buf, size_t max) {
     return to_send;
 }
 
+/**
+ * @brief callback function to handle completed requests.
+ *
+ * @param cls connection information.
+ * @param connection MHD connection object.
+ * @param con_cls connection's custom object.
+ * @param toe termination code.
+ */
+
 static void request_completed_callback(void *cls, struct MHD_Connection *connection,
                                        void **con_cls, enum MHD_RequestTerminationCode toe) {
     connection_info *conn_info = *con_cls;
@@ -47,6 +67,15 @@ static void request_completed_callback(void *cls, struct MHD_Connection *connect
         free(conn_info);
     }
 }
+
+/**
+ * @brief parses the query string and returns the value associated with the specified key.
+ *
+ * @param data query string.
+ * @param key key to search for.
+ *
+ * @return dynamically allocated string containing the value, or NULL (if not found).
+ */
 
 char *get_parameter_value(const char *data, const char *key) {
     char *key_pos = strstr(data, key);
@@ -65,6 +94,21 @@ char *get_parameter_value(const char *data, const char *key) {
     value[len] = '\0';
     return value;
 }
+
+/**
+ * @brief handles incoming HTTP requests, so both GET and POST methods.
+ *
+ * @param cls custom data passed to the handler.
+ * @param connection MHD connection object.
+ * @param url URL requested.
+ * @param method HTTP (GET, POST).
+ * @param version HTTP version.
+ * @param upload_data data uploaded by the client.
+ * @param upload_data_size size of the uploaded data.
+ * @param con_cls pointer to a custom connection object.
+ *
+ * @return result code indicating success or failure.
+ */
 
 static enum MHD_Result request_handler(void *cls, struct MHD_Connection *connection,
                                        const char *url, const char *method,
@@ -258,6 +302,10 @@ static enum MHD_Result request_handler(void *cls, struct MHD_Connection *connect
     return MHD_NO;
 }
 
+/**
+ * @brief starts the web server and listens for incoming HTTP requests.
+ */
+
 void start_webserver() {
     mhd_daemon = MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, PORT, NULL, NULL,
                               request_handler, NULL,
@@ -272,6 +320,10 @@ void start_webserver() {
     g_print("HTTP server running on port %d\n", PORT);
     g_print("Stream available at http://localhost:%d/\n", PORT);
 }
+
+/**
+ * @brief stops the web server and cleans up.
+ */
 
 void stop_webserver() {
     if (mhd_daemon) {
