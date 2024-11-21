@@ -1,12 +1,17 @@
 CC = gcc
-CFLAGS = -Wall -pthread $(shell pkg-config --cflags gstreamer-1.0 gstreamer-app-1.0 libmicrohttpd)
-LDFLAGS = $(shell pkg-config --libs gstreamer-1.0 gstreamer-app-1.0 libmicrohttpd)
-TARGET = streamer
+CFLAGS = -g -Wall -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/include/gio-unix-2.0 -I/usr/include/libxml2
+LIBS = -lgstreamer-1.0 -lglib-2.0 -lxml2 -lmicrohttpd -pthread
+SRC = main.c camera.c webserver.c
+OBJ = $(SRC:.c=.o)
+EXEC = webcam_stream
 
-all: $(TARGET)
+all: $(EXEC)
 
-$(TARGET): main.c
-	$(CC) $(CFLAGS) -o $(TARGET) main.c $(LDFLAGS)
+$(EXEC): $(OBJ)
+	$(CC) $(OBJ) -o $(EXEC) $(LIBS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(OBJ) $(EXEC)
